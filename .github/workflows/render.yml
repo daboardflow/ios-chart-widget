@@ -6,10 +6,11 @@ name: Render widget
   workflow_dispatch:
     inputs:
       chart:
-        description: "Chart to publish now and keep using on scheduled runs"
+        description: "Publish the large dashboard or select a legacy medium chart"
         type: choice
-        default: current
+        default: dashboard
         options:
+          - dashboard
           - current
           - wind-rose
           - iris
@@ -34,13 +35,20 @@ jobs:
           cache: pip
       - name: Install renderer dependencies
         run: python -m pip install -r requirements.txt
-      - name: Render the chart
+      - name: Render the large dashboard
+        if: github.event_name == 'schedule' || inputs.chart == 'dashboard'
+        run: python render_dashboard.py
+      - name: Render the legacy medium chart
+        if: github.event_name == 'schedule' || inputs.chart != 'dashboard'
         env:
           CHART: ${{ inputs.chart || 'current' }}
         run: python render.py --chart "$CHART"
-      - name: Publish changed outputs
+      - name: Publish changed dashboard and chart outputs
         run: |
           git add -- public/chart.png public/data.json
+          if [ -d public/dashboard ]; then
+            git add -- public/dashboard/wind-rose.png public/dashboard/mt-bruno.png public/dashboard/data.json
+          fi
           if git diff --cached --quiet; then
             echo "Chart and metadata unchanged."
             exit 0
