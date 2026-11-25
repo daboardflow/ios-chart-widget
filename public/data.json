@@ -1,76 +1,16 @@
 {
-  "caption": "Laurel, NE · Sample",
-  "chart": "wind-rose",
-  "revision": "3b0e8f7f",
+  "caption": "150 flowers",
+  "chart": "iris",
+  "revision": "a0b33da8",
   "schema": 1,
   "summary": {
-    "directions": [
-      "North",
-      "N-E",
-      "East",
-      "S-E",
-      "South",
-      "S-W",
-      "West",
-      "N-W"
-    ],
-    "mode": "overlay",
-    "series": [
-      {
-        "name": "11–14 m/s",
-        "r": [
-          77.5,
-          72.5,
-          70,
-          45,
-          22.5,
-          42.5,
-          40,
-          62.5
-        ]
-      },
-      {
-        "name": "8–11 m/s",
-        "r": [
-          57.5,
-          50,
-          45,
-          35,
-          20,
-          22.5,
-          37.5,
-          55
-        ]
-      },
-      {
-        "name": "5–8 m/s",
-        "r": [
-          40,
-          30,
-          30,
-          35,
-          7.5,
-          7.5,
-          32.5,
-          40
-        ]
-      },
-      {
-        "name": "< 5 m/s",
-        "r": [
-          20,
-          7.5,
-          15,
-          22.5,
-          2.5,
-          2.5,
-          12.5,
-          22.5
-        ]
-      }
-    ],
-    "source": "Provided test fixture",
-    "unit": "percent"
+    "rows": 150,
+    "source": "https://raw.githubusercontent.com/plotly/datasets/master/iris-data.csv",
+    "species": {
+      "Iris-setosa": 50,
+      "Iris-versicolor": 50,
+      "Iris-virginica": 50
+    }
   },
-  "title": "Wind speed distribution"
+  "title": "Iris dataset"
 }
