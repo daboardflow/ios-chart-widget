@@ -1,5 +1,5 @@
 // Paste into Scriptable. Change BASE_URL only if you deploy this to another repo.
-const BASE_URL = "https://raw.githubusercontent.com/daboardflow/ios-chart-widget/main/public";
+const BASE_URL = "https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/public";
 const REFRESH_MINUTES = 30;
 
 function checksum(base64) {
