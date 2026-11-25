@@ -1,0 +1,51 @@
+name: Render widget
+
+"on":
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: "Chart to publish now and keep using on scheduled runs"
+        type: choice
+        default: current
+        options:
+          - current
+          - wind-rose
+          - iris
+
+permissions:
+  contents: write
+
+concurrency:
+  group: widget-render-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install renderer dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Render the chart
+        env:
+          CHART: ${{ inputs.chart || 'current' }}
+        run: python render.py --chart "$CHART"
+      - name: Publish changed outputs
+        run: |
+          git add -- public/chart.png public/data.json
+          if git diff --cached --quiet; then
+            echo "Chart and metadata unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Render widget chart"
+          git push
