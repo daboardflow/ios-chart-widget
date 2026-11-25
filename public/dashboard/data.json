@@ -1,0 +1,26 @@
+{
+  "data": "sample",
+  "layout": "dashboard",
+  "panels": [
+    {
+      "id": "wind-rose",
+      "image": "wind-rose.png",
+      "mode": "overlay",
+      "revision": "c29ebf60",
+      "source": "Provided wind rose sample",
+      "title": "Wind rose"
+    },
+    {
+      "grid": [
+        25,
+        24
+      ],
+      "id": "mt-bruno",
+      "image": "mt-bruno.png",
+      "revision": "50d31dc4",
+      "source": "https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv",
+      "title": "Mt. Bruno"
+    }
+  ],
+  "schema": 1
+}
