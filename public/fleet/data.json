@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "layout": "fleet",
+  "type": "sample",
+  "map": {
+    "file": "service-map.png",
+    "revision": "60bb0ab0"
+  },
+  "report": {
+    "file": "fleet-report-2df78394fc57.pdf"
+  },
+  "fleet": [
+    {
+      "id": "101",
+      "status": "Busy",
+      "area": "N. Phoenix",
+      "next": "On site"
+    },
+    {
+      "id": "102",
+      "status": "Shift Start",
+      "area": "Tempe",
+      "next": "8 min"
+    },
+    {
+      "id": "103",
+      "status": "En Route",
+      "area": "Scottsdale",
+      "next": "12 min"
+    },
+    {
+      "id": "104",
+      "status": "Available",
+      "area": "Mesa",
+      "next": "Not assigned"
+    }
+  ]
+}
