@@ -6,10 +6,11 @@ name: Render widget
   workflow_dispatch:
     inputs:
       chart:
-        description: "Publish the large dashboard or select a legacy medium chart"
+        description: "Publish the fleet report, chart dashboard, or legacy medium chart"
         type: choice
-        default: dashboard
+        default: fleet
         options:
+          - fleet
           - dashboard
           - current
           - wind-rose
@@ -35,11 +36,14 @@ jobs:
           cache: pip
       - name: Install renderer dependencies
         run: python -m pip install -r requirements.txt
+      - name: Generate the sample fleet report
+        if: github.event_name == 'workflow_dispatch' && inputs.chart == 'fleet'
+        run: python render_fleet.py
       - name: Render the large dashboard
         if: github.event_name == 'schedule' || inputs.chart == 'dashboard'
         run: python render_dashboard.py
       - name: Render the legacy medium chart
-        if: github.event_name == 'schedule' || inputs.chart != 'dashboard'
+        if: github.event_name == 'schedule' || (inputs.chart != 'dashboard' && inputs.chart != 'fleet')
         env:
           CHART: ${{ inputs.chart || 'current' }}
         run: python render.py --chart "$CHART"
@@ -48,6 +52,9 @@ jobs:
           git add -- public/chart.png public/data.json
           if [ -d public/dashboard ]; then
             git add -- public/dashboard/wind-rose.png public/dashboard/mt-bruno.png public/dashboard/data.json
+          fi
+          if [ -d public/fleet ]; then
+            git add -- public/fleet
           fi
           if git diff --cached --quiet; then
             echo "Chart and metadata unchanged."

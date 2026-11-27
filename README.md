@@ -1,21 +1,23 @@
 # GitHub-rendered Scriptable widget
 
-A large iOS dashboard for Scriptable, with two placeholder buttons above a wind rose and a Mt. Bruno elevation surface. Both charts use sample data. The original medium widget remains available as a separate script.
+A large iOS fleet dashboard for Scriptable, with a service-area map, four sample truck status buttons, and a PDF report. The two-chart dashboard and the original medium widget remain available as separate scripts.
 
 ## Run it on your iPhone
 
-1. Copy [the raw `DashboardWidget.js` script](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/DashboardWidget.js) into a new Scriptable script. It already points at this public repo; no token is needed.
-2. Run the script to see the large preview. On your Home Screen, add a **large** Scriptable widget and select the new script. If replacing a medium widget, remove the medium widget and add a large one.
-3. **Action 1** and **Action 2** are visual placeholders. The `ACTIONS` array in `DashboardWidget.js` is where their labels and destinations can be set later. The dashboard fetches `public/dashboard/data.json` and only downloads the chart PNGs whose revisions changed.
+1. Paste [the raw `FleetWidget.js` script](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/FleetWidget.js) into Scriptable. You can replace the contents of your existing large widget script or choose the new script in the widget settings.
+2. Run the script for a large preview. On the Home Screen, **View Report** opens the sample PDF, and the four truck buttons open status details. **Generate Report** currently opens an explanatory message; it does not start a workflow.
+3. The dashboard displays the last validated map and status snapshot if a refresh fails. The PDF is opened on tap and needs a network connection.
 
-To rerender immediately, use **Actions → Render widget → Run workflow** and choose `dashboard`. For the original medium widget, use [the raw `ChartWidget.js` script](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/ChartWidget.js) and select `iris`, `wind-rose`, or `current` in the workflow. The medium chart selection is independent of the large dashboard.
+To rebuild the sample PDF and map, use **Actions → Render widget → Run workflow → fleet**. Python writes the preview map and a content-versioned PDF (the full supplied reference map and sample truck status table), then publishes their manifest. Do not publish real dispatch records, customer data, or staff names to this public repository.
 
-The scheduled job renders both versions at `:07` and `:37` UTC and only commits changed outputs. [GitHub can delay scheduled jobs](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows?trk=public_post_comment-text), and its raw-file cache can take a few minutes to show newly published charts. The widgets request a refresh no earlier than 30 minutes; [iOS decides when they actually refresh](https://docs.scriptable.app/listwidget/).
+The older [two-chart dashboard](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/DashboardWidget.js) and [medium chart widget](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/ChartWidget.js) still work. The chart workflow options remain `dashboard`, `iris`, `wind-rose`, and `current`. The existing schedule renders the chart versions at `:07` and `:37` UTC; the static fleet sample is rebuilt manually only. The widgets request a refresh no earlier than 30 minutes; [iOS decides when they actually refresh](https://docs.scriptable.app/listwidget/).
 
 ## Test or extend it locally
 
 ```sh
 python -m pip install -r requirements.txt
+python render_fleet.py --out /tmp/widget-fleet
+node test-fleet.cjs /tmp/widget-fleet
 python render_dashboard.py --out /tmp/widget-dashboard
 node test-dashboard.cjs /tmp/widget-dashboard
 python render.py --chart wind-rose --out /tmp/widget-wind
