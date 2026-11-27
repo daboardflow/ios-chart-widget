@@ -1,11 +1,11 @@
 // Paste into Scriptable and select this script on a large widget.
 const RAW = "https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/public/fleet";
-const REPORTS = "https://github.com/daboardflow/ios-chart-widget/blob/main/public/fleet";
 const W = 272;
 const MAP_HEIGHT = 150;
 const INK = "#F3F1FC";
 const MUTED = "#C7C4DD";
 const CARD = "#202036";
+const REPORT_FILE = /^fleet-report-[a-f0-9]{12}\.pdf$/;
 const STATUS = {
   "Busy": "#176234", "Shift Start": "#8D430C",
   "En Route": "#1D50A1", "Available": "#495872",
@@ -20,7 +20,7 @@ function checksum(base64) {
 function valid(meta) {
   if (meta?.schema !== 1 || meta.layout !== "fleet" || meta.type !== "sample" ||
       meta.map?.file !== "service-map.png" || !/^[a-f0-9]{8}$/.test(meta.map?.revision) ||
-      !/^fleet-report-[a-f0-9]{12}\.pdf$/.test(meta.report?.file) ||
+      !REPORT_FILE.test(meta.report?.file) ||
       !Array.isArray(meta.fleet) || meta.fleet.length !== 4 ||
       new Set(meta.fleet.map(truck => truck?.id)).size !== 4 ||
       !meta.fleet.every(truck => /^\d{3}$/.test(truck.id) &&
@@ -132,7 +132,7 @@ async function buildWidget() {
 
   const actions = dashboard.addStack();
   button(actions, "View Report", 132, 36, "#6A51A3",
-    snapshot ? `${REPORTS}/${snapshot.meta.report.file}` : null);
+    snapshot ? actionURL("view", `&file=${encodeURIComponent(snapshot.meta.report.file)}`) : null);
   actions.addSpacer(8);
   button(actions, "Generate Report", 132, 36, CARD, actionURL("generate"), true);
   dashboard.addSpacer(6);
@@ -171,7 +171,24 @@ async function buildWidget() {
 
 async function showAction(query) {
   const alert = new Alert();
-  if (query.fleetAction === "generate") {
+  if (query.fleetAction === "view") {
+    try {
+      if (!REPORT_FILE.test(query.file)) throw new Error("Invalid report filename");
+      const fm = FileManager.local();
+      const target = fm.joinPath(fm.cacheDirectory(), query.file);
+      if (!fm.fileExists(target)) {
+        const pdf = await request(query.file, "load");
+        if (!pdf.toBase64String().startsWith("JVBERi0")) throw new Error("Invalid PDF response");
+        fm.write(target, pdf);
+      }
+      await QuickLook.present(target, true);
+      return;
+    } catch (error) {
+      console.log(`Could not open fleet report: ${error}`);
+      alert.title = "Report unavailable";
+      alert.message = "Check your connection or reopen the widget and try again.";
+    }
+  } else if (query.fleetAction === "generate") {
     alert.title = "Generate Report";
     alert.message = "On-demand generation is not connected yet. Use View Report to open the sample PDF.";
   } else {
@@ -187,7 +204,7 @@ async function showAction(query) {
 }
 
 const query = args.queryParameters ?? {};
-if (config.runsInApp && ["generate", "truck"].includes(query.fleetAction)) {
+if (config.runsInApp && ["view", "generate", "truck"].includes(query.fleetAction)) {
   await showAction(query);
 } else {
   const widget = await buildWidget();

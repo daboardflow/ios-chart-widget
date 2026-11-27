@@ -27,7 +27,7 @@ class Stack {
 
 async function run({ inApp = false, family = "large", query = {}, offline = false, remote = meta } = {}) {
   const requests = [];
-  let widget, alert, complete;
+  let widget, alert, complete, quickLook;
   await vm.runInNewContext(`(async () => {${script}\n})()`, {
     args: { queryParameters: query },
     config: { runsInApp: inApp, runsInWidget: !inApp, widgetFamily: family },
@@ -39,13 +39,18 @@ async function run({ inApp = false, family = "large", query = {}, offline = fals
         requests.push(this.filename);
       }
       async loadJSON() { return remote; }
-      async load() { return { toBase64String: () => png.toString("base64") }; }
+      async load() {
+        return { toBase64String: () =>
+          (this.filename.endsWith(".pdf") ? pdf : png).toString("base64") };
+      }
     },
     FileManager: { local: () => ({
-      documentsDirectory: () => "/mock", joinPath: path.join,
+      documentsDirectory: () => "/mock", cacheDirectory: () => "/mock/cache", joinPath: path.join,
       fileExists: key => disk.has(key), readString: key => disk.get(key),
       writeString: (key, val) => disk.set(key, val),
+      write: (key, val) => disk.set(key, val),
     }) },
+    QuickLook: { present: async file => { assert.ok(disk.has(file)); quickLook = file; } },
     Image: { fromData: data => data },
     Data: { fromBase64String: val => Buffer.from(val, "base64") },
     ListWidget: class extends Stack { async presentLarge() { widget = this; } },
@@ -56,7 +61,7 @@ async function run({ inApp = false, family = "large", query = {}, offline = fals
     console: { log() {} },
   });
   assert.equal(complete, true);
-  return { widget, alert, requests };
+  return { widget, alert, requests, quickLook };
 }
 
 async function main() {
@@ -66,13 +71,21 @@ async function main() {
   const [actions, fleet] = dashboard.children;
   assert.deepEqual(actions.children.map(x => x.labels[0]), ["View Report", "Generate Report"]);
   assert.equal(actions.children[0].url,
-    `https://github.com/daboardflow/ios-chart-widget/blob/main/public/fleet/${meta.report.file}`);
+    `scriptable:///run?scriptName=Fleet&fleetAction=view&file=${meta.report.file}`);
   assert.match(actions.children[1].url, /[?&]fleetAction=generate$/);
   const trucks = fleet.children.slice(1).flatMap(x => x.children);
   assert.deepEqual(trucks.map(x => x.labels[0]),
     ["#101  Busy  ›", "#102  Shift Start  ›", "#103  En Route  ›", "#104  Available  ›"]);
   assert.ok(trucks[2].url.endsWith("fleetAction=truck&id=103"));
   assert.equal(first.requests.length, 2);
+  const view = { inApp: true, query: { fleetAction: "view", file: meta.report.file } };
+  assert.equal((await run({ ...view, offline: true })).alert.title, "Report unavailable");
+  const opened = await run(view);
+  assert.equal(opened.quickLook, `/mock/cache/${meta.report.file}`);
+  assert.deepEqual(opened.requests, [meta.report.file]);
+  const reopened = await run({ ...view, offline: true });
+  assert.equal(reopened.quickLook, opened.quickLook);
+  assert.deepEqual(reopened.requests, []);
   assert.deepEqual((await run()).requests, ["data.json"]);
   const cached = await run({ remote: { ...meta, map: { ...meta.map, revision: "12345678" } } });
   assert.equal(cached.widget.children[0].children[0].children[1].children[0].labels[1], "SAMPLE · CACHED");
