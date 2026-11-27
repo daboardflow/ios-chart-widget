@@ -5,7 +5,7 @@ A large iOS fleet dashboard for Scriptable, with a service-area map, four sample
 ## Run it on your iPhone
 
 1. Paste [the raw `FleetWidget.js` script](https://raw.githubusercontent.com/daboardflow/ios-chart-widget/refs/heads/main/FleetWidget.js) into Scriptable. You can replace the contents of your existing large widget script or choose the new script in the widget settings.
-2. Run the script for a large preview. On the Home Screen, **View Report** opens the sample PDF, and the four truck buttons open status details. **Generate Report** currently opens an explanatory message; it does not start a workflow.
+2. Run the script for a large preview. On the Home Screen, **View Report** opens the sample PDF. Each fleet row shows the truck, status, and area, with a **View** button for details. **Generate Report** currently opens an explanatory message; it does not start a workflow.
 3. The dashboard displays the last validated map and status snapshot if a refresh fails. The PDF downloads on first tap, opens in Quick Look, and can be reopened offline while it remains in Scriptable's cache.
 
 To rebuild the sample PDF and map, use **Actions → Render widget → Run workflow → fleet**. Python writes the preview map and a content-versioned PDF (the full supplied reference map and sample truck status table), then publishes their manifest. Do not publish real dispatch records, customer data, or staff names to this public repository.

@@ -7,8 +7,8 @@ const MUTED = "#C7C4DD";
 const CARD = "#202036";
 const REPORT_FILE = /^fleet-report-[a-f0-9]{12}\.pdf$/;
 const STATUS = {
-  "Busy": "#176234", "Shift Start": "#8D430C",
-  "En Route": "#1D50A1", "Available": "#495872",
+  "Busy": "#65D98B", "Shift Start": "#FFAE68",
+  "En Route": "#70AAFF", "Available": "#A6B3CB",
 };
 
 function checksum(base64) {
@@ -93,7 +93,7 @@ function button(row, title, width, height, color, url, border = false) {
   item.layoutHorizontally();
   item.centerAlignContent();
   item.size = new Size(width, height);
-  item.cornerRadius = 8;
+  item.cornerRadius = height / 2;
   item.backgroundColor = new Color(color);
   if (border) {
     item.borderWidth = 1;
@@ -101,8 +101,34 @@ function button(row, title, width, height, color, url, border = false) {
   }
   if (url) item.url = url;
   item.addSpacer();
-  label(item, title, height > 30 ? 12 : 10, true);
+  label(item, title, height >= 28 ? 11 : 9.5, true);
   item.addSpacer();
+}
+
+function fleetRow(list, truck) {
+  const row = list.addStack();
+  row.centerAlignContent();
+  row.size = new Size(W - 16, 20);
+
+  function column(width) {
+    const cell = row.addStack();
+    cell.size = new Size(width, 20);
+    cell.centerAlignContent();
+    return cell;
+  }
+
+  label(column(39), `#${truck.id}`, 11, true);
+  const status = column(85);
+  const dot = status.addStack();
+  dot.size = new Size(6, 6);
+  dot.cornerRadius = 3;
+  dot.backgroundColor = new Color(STATUS[truck.status]);
+  status.addSpacer(5);
+  label(status, truck.status, 10.5);
+  label(column(76), truck.area, 10.5, false, MUTED);
+  row.addSpacer();
+  button(row, "View ›", 48, 17, "#2E2D49",
+    actionURL("truck", `&id=${encodeURIComponent(truck.id)}`), true);
 }
 
 async function buildWidget() {
@@ -111,7 +137,7 @@ async function buildWidget() {
   bg.colors = [new Color("#212133"), new Color("#151522")];
   bg.locations = [0, 1];
   widget.backgroundGradient = bg;
-  widget.setPadding(7, 8, 7, 8);
+  widget.setPadding(6, 8, 5, 8);
   widget.refreshAfterDate = new Date(Date.now() + 30 * 60 * 1000);
   if (config.runsInWidget && config.widgetFamily !== "large") {
     label(widget, "Use a large Scriptable widget", 13, true);
@@ -122,7 +148,6 @@ async function buildWidget() {
   try { snapshot = await loadFleet(); }
   catch (error) { console.log(`Fleet snapshot unavailable: ${error}`); }
 
-  widget.addSpacer();
   const frame = widget.addStack();
   frame.addSpacer();
   const dashboard = frame.addStack();
@@ -131,11 +156,13 @@ async function buildWidget() {
   frame.addSpacer();
 
   const actions = dashboard.addStack();
-  button(actions, "View Report", 132, 36, "#6A51A3",
+  actions.addSpacer();
+  button(actions, "View Report", 100, 28, "#6A51A3",
     snapshot ? actionURL("view", `&file=${encodeURIComponent(snapshot.meta.report.file)}`) : null);
-  actions.addSpacer(8);
-  button(actions, "Generate Report", 132, 36, CARD, actionURL("generate"), true);
-  dashboard.addSpacer(6);
+  actions.addSpacer(7);
+  button(actions, "Generate Report", 117, 28, CARD, actionURL("generate"), true);
+  actions.addSpacer();
+  dashboard.addSpacer(5);
 
   if (!snapshot) {
     label(dashboard, "Fleet snapshot unavailable", 12, true, MUTED);
@@ -143,27 +170,28 @@ async function buildWidget() {
     const map = dashboard.addImage(snapshot.image);
     map.imageSize = new Size(W, MAP_HEIGHT);
     map.cornerRadius = 10;
-    dashboard.addSpacer(6);
+    dashboard.addSpacer(5);
     const fleet = dashboard.addStack();
     fleet.layoutVertically();
-    fleet.setPadding(6, 8, 6, 8);
+    fleet.setPadding(5, 8, 5, 8);
     fleet.backgroundColor = new Color(CARD);
     fleet.cornerRadius = 10;
     const header = fleet.addStack();
     header.centerAlignContent();
     label(header, "Fleet Status", 12, true);
-    header.addSpacer();
-    label(header, snapshot.cached ? "SAMPLE · CACHED" : "SAMPLE DATA", 8, true, MUTED);
-    fleet.addSpacer(4);
-    for (let i = 0; i < 4; i += 2) {
-      if (i) fleet.addSpacer(4);
-      const row = fleet.addStack();
-      for (const truck of snapshot.meta.fleet.slice(i, i + 2)) {
-        if (truck === snapshot.meta.fleet[i + 1]) row.addSpacer(6);
-        button(row, `#${truck.id}  ${truck.status}  ›`, 125, 23, STATUS[truck.status],
-          actionURL("truck", `&id=${encodeURIComponent(truck.id)}`));
-      }
+    if (snapshot.cached) {
+      header.addSpacer();
+      label(header, "Cached", 8.5, false, MUTED);
     }
+    fleet.addSpacer(3);
+    snapshot.meta.fleet.forEach((truck, index) => {
+      if (index) {
+        const divider = fleet.addStack();
+        divider.size = new Size(W - 16, 1);
+        divider.backgroundColor = new Color("#34334B");
+      }
+      fleetRow(fleet, truck);
+    });
   }
   widget.addSpacer();
   return widget;
@@ -196,7 +224,7 @@ async function showAction(query) {
     try { truck = (await loadFleet()).meta.fleet.find(item => item.id === query.id); }
     catch (error) { console.log(`Truck snapshot unavailable: ${error}`); }
     alert.title = truck ? `Truck #${truck.id} · ${truck.status}` : "Truck details unavailable";
-    alert.message = truck ? `${truck.area}\nETA / Next stop: ${truck.next}\n\nSample data` :
+    alert.message = truck ? `${truck.area}\nETA / Next stop: ${truck.next}` :
       "Open the fleet widget again when the sample snapshot is available.";
   }
   alert.addAction("Done");
